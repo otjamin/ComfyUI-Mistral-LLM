@@ -1,87 +1,11 @@
-[build-system]
-requires = ["setuptools>=70.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
-name = "mistral_llm"
-version = "0.0.1"
-description = "A local LLM node for Mistral3"
-authors = [
-  {name = "otjamin", email = "git@otto.bayern"}
-]
+name = "mistral-llm"
+version = "0.1.0"
+description = "Add your description here"
 readme = "README.md"
-license = {text = "GNU General Public License v3"}
 requires-python = ">=3.10"
-classifiers = []
 dependencies = [
-
+    "huggingface-hub>=0.36.0",
+    "mistral-common>=1.8.8",
+    "transformers>=4.57.6",
 ]
-
-
-
-[project.optional-dependencies]
-dev = [
-    "bump-my-version",
-    "coverage",  # testing
-    "mypy",  # linting
-    "pre-commit", # runs linting on commit
-    "pytest",  # testing
-    "ruff",  # linting
-]
-
-[project.urls]
-Repository = "https://github.com/otjamin/mistral_llm"
-BugTracker = "https://github.com/otjamin/mistral_llm/issues"
-Documentation = "https://github.com/otjamin/mistral_llm/wiki"
-
-
-[tool.comfy]
-PublisherId = "otjamin"
-DisplayName = "ComfyUI-Mistral-LLM"
-Icon = ""
-Tags = []
-Repository = "https://github.com/otjamin/ComfyUI-Mistral-LLM"
-
-includes = []
-
-[tool.setuptools.package-data]
-"*" = ["*.*"]
-
-[tool.pytest.ini_options]
-minversion = "8.0"
-testpaths = [
-    "tests",
-]
-
-[tool.mypy]
-files = "."
-
-# Use strict defaults
-strict = true
-warn_unreachable = true
-warn_no_return = true
-
-[[tool.mypy.overrides]]
-# Don't require test functions to include types
-module = "tests.*"
-allow_untyped_defs = true
-disable_error_code = "attr-defined"
-
-[tool.ruff]
-# extend-exclude = ["static", "ci/templates"]
-line-length = 140
-src = ["src", "tests"]
-target-version = "py39"
-
-# Add rules to ban exec/eval
-[tool.ruff.lint]
-select = [
-    "S102",  # exec-builtin
-    "S307",  # eval-used
-    "W293",
-    "F",  # The "F" series in Ruff stands for "Pyflakes" rules, which catch various Python syntax errors and undefined names.
-    # See all rules here: https://docs.astral.sh/ruff/rules/#pyflakes-f
-]
-
-[tool.ruff.lint.flake8-quotes]
-inline-quotes = "double"

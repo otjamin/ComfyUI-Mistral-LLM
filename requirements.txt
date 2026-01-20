@@ -1,0 +1,2 @@
+transformers
+mistral-common>=1.6.2

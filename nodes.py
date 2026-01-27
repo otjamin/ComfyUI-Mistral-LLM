@@ -71,10 +71,12 @@ class MistralLLMNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "image": ("IMAGE",),
                 "mistral3_model": ("M3MODEL",),
-                "system_prompt": ("STRING", {"default": "", "multiline": True}),
                 "user_prompt": ("STRING", {"default": "", "multiline": True}),
+            },
+            "optional": {
+                "image": ("IMAGE",),
+                "system_prompt": ("STRING", {"default": "", "multiline": True}),
             },
         }
 
@@ -83,7 +85,9 @@ class MistralLLMNode:
     CATEGORY = "llm"
     FUNCTION = "generate"
 
-    def generate(self, image, mistral3_model, system_prompt: str, user_prompt: str):
+    def generate(
+        self, mistral3_model, user_prompt: str, image=None, system_prompt: str = ""
+    ):
         device = mm.get_torch_device()
 
         model: Mistral3ForConditionalGeneration = mistral3_model["model"]
@@ -91,25 +95,40 @@ class MistralLLMNode:
 
         model.to(device)
 
-        image = tensor_to_pil(image)
+        messages = []
 
         SYSTEM_PROMPT = system_prompt
+        if SYSTEM_PROMPT:
+            messages.append({"role": "system", "content": SYSTEM_PROMPT})
 
-        messages = [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": user_prompt,
-                    },
-                    ImageChunk(
-                        image=image,
-                    ),
-                ],
-            },
-        ]
+        if image:
+            image = tensor_to_pil(image)
+            messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": user_prompt,
+                        },
+                        ImageChunk(
+                            image=image,
+                        ),
+                    ],
+                }
+            )
+        else:
+            messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": user_prompt,
+                        }
+                    ],
+                }
+            )
 
         tokenized = tokenizer.encode_chat_completion(
             ChatCompletionRequest(messages=messages)
@@ -117,20 +136,27 @@ class MistralLLMNode:
 
         input_ids = torch.tensor([tokenized.tokens]).to(device)
         attention_mask = torch.ones_like(input_ids).to(device)
-        pixel_values = (
-            torch.tensor(tokenized.images[0], dtype=torch.bfloat16)
-            .unsqueeze(0)
-            .to(device)
-        )
-        image_sizes = torch.tensor([pixel_values.shape[-2:]]).to(device)
+        if image:
+            pixel_values = (
+                torch.tensor(tokenized.images[0], dtype=torch.bfloat16)
+                .unsqueeze(0)
+                .to(device)
+            )
+            image_sizes = torch.tensor([pixel_values.shape[-2:]]).to(device)
 
-        output = model.generate(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            pixel_values=pixel_values,
-            image_sizes=image_sizes,
-            max_new_tokens=1000,
-        )[0]
+            output = model.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                pixel_values=pixel_values,
+                image_sizes=image_sizes,
+                max_new_tokens=1000,
+            )[0]
+        else:
+            output = model.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                max_new_tokens=1000,
+            )[0]
 
         decoded_output = tokenizer.decode(output[len(tokenized.tokens) :])
 
